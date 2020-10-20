@@ -1,43 +1,39 @@
 #pragma once
 const unsigned int max_command_name = 4;
-const unsigned int max_argc = 1;
+const unsigned int max_argc = 2;
 const unsigned char current_version = 1;
+const int register_count = 4;
 const char label[] = "GG";
 const unsigned int label_size = 2;
-const int command_count = 11;
-enum assembler_command{
-    HET ,
-    PUSH ,
-    ADD ,
-    SUB ,
-    MUL ,
-    OUT ,
-    DUMP ,
-    DIV ,
-    SQRT ,
-    SIN ,
-    COS
-};
-const char command_names[][max_command_name+1] = {"het",
-                                                  "push",
-                                                  "add",
-                                                  "sub",
-                                                  "mul",
-                                                  "out",
-                                                  "dump",
-                                                  "div",
-                                                  "sqrt",
-                                                  "sin",
-                                                  "cos"};
+const int command_count = 15;
+///////////////////////////////////////////////////////////////////////////////////////
 
-                               const int argc[] = {0,
-                                                   1,
-                                                   0,
-                                                   0,
-                                                   0,
-                                                   0,
-                                                   0,
-                                                   0,
-                                                   0,
-                                                   0,
-                                                   0,};
+#define COMMAND(name, num, argc, code)\
+ V_ ## name = num,
+
+enum assembler_command{
+    #include"commands.h"
+};
+
+#undef COMMAND
+///////////////////////////////////////////////////////////////////////////////////////
+
+#define COMMAND(name, num, argc, code)\
+    #name,
+
+const char command_names[][max_command_name+1] = {    
+    #include"commands.h"
+};
+
+#undef COMMAND
+///////////////////////////////////////////////////////////////////////////////////////
+#define COMMAND(name, num, argc, code)\
+    argc,
+
+const int argc[] = {
+    #include "commands.h"
+};
+
+#undef COMMAND
+///////////////////////////////////////////////////////////////////////////////////////
+

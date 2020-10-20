@@ -1,14 +1,14 @@
 CFLAGS= -c
 CTEMP=-Wall -Werror -Wextra -pedantic -Wshadow -Wconversion -Wsign-conversion
-all: assembler
+all: assembler executor
 
 assembler: translator.o assembler/assembler.o assembler/data.o
 	g++ translator.o assembler/assembler.o assembler/data.o -o assm 
 
-translator.o: translator.cpp
+translator.o: translator.cpp assembler/assembler.h constants.h
 	g++ $(CFLAGS) translator.cpp
 
-assembler.o: assembler/assembler.cpp
+assembler.o: assembler/assembler.cpp constants.h
 	g++ $(CFLAGS) assembler/assembler.cpp
 
 data.o: assembler/data.cpp
@@ -20,13 +20,13 @@ stack.o: stack/stack.cpp
 log.o: stack/log.cpp
 	g++ $(CFLAGS) stack/log.cpp
 
-cpu.o: cpu/cpu.cpp
+cpu.o: cpu/cpu.cpp constants.h
 	g++ $(CFLAGS) cpu/cpu.cpp
 
-executor.o: executor.cpp
+executor.o: executor.cpp constants.h
 	g++ $(CFLAGS) executor.cpp
 
-executor: stack/stack.o stack/log.o cpu/cpu.o executor.o
+executor: stack/stack.o stack/log.o cpu/cpu.o executor.o constants.h
 	g++ executor.o stack/stack.o stack/log.o cpu/cpu.o -o exec 
 clean:
-	rm -rf *.o hello
+	rm -rf *.o assm exec stack/*.o cpu/*.o assembler/*.o 

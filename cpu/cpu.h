@@ -4,11 +4,14 @@
 
 struct Cpu{
     Stack_t cpu_stack;
+    double* registers;
 };
 
 void cpu_constructor(Cpu* cp);
 
 void cpu_destructor(Cpu* cp);
+
+void check_executable_file(FILE* fp);
 
 void cpu_execute_programm(Cpu* cp, const char* file);
 

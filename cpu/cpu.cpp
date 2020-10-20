@@ -19,18 +19,20 @@
 
 void cpu_constructor(Cpu* cp){
     stack_constructor(&(cp->cpu_stack), 10);
+    cp->registers = (double*)calloc(4, sizeof(double));
 }
 
 void cpu_destructor(Cpu* cp){
     stack_destructor(&(cp->cpu_stack));
+    free(cp->registers);
 }
 
 
 void check_executable_file(FILE* fp){
-    char* tmplabel = (char*)calloc(label_size + 1, sizeof(char));
- 
-    unsigned char version = 0;
+    assert(fp != NULL);
 
+    char* tmplabel = (char*)calloc(label_size + 1, sizeof(char)); 
+    unsigned char version = 0;
 
     fread(tmplabel, sizeof(char), label_size, fp);
 
@@ -51,89 +53,24 @@ void check_executable_file(FILE* fp){
     }
 }
 
-size_t execute_command(Stack_t* stack, char* buffer){
-    size_t curr_offset = 0;
-    char operation = *((char*)buffer);
-    curr_offset += sizeof(char);
-
-    switch(operation){
-        case PUSH:{
-            double arg = *((double*)(buffer + curr_offset));
-            curr_offset += sizeof(double);
-            stack_push(stack, arg);
-            break;
-        }
-        case ADD:{
-            double arg1 = 0, 
-                   arg2 = 0;
-            stack_pop(stack, &arg1);
-            stack_pop(stack, &arg2);
-            stack_push(stack, arg1+arg2);
-            break;
-        }
-        case SUB:{
-            double arg1 = 0, 
-                   arg2 = 0;
-            stack_pop(stack, &arg1);
-            stack_pop(stack, &arg2);
-            stack_push(stack, arg1-arg2);
-            break;
-        }
-        case MUL:{
-            double arg1 = 0, 
-                   arg2 = 0;
-            stack_pop(stack, &arg1);
-            stack_pop(stack, &arg2);
-            stack_push(stack, arg1*arg2);
-            break;
-        }
-        case OUT:{
-            double arg1 = 1;
-            stack_pop(stack, &arg1);
-            printf("%lg", arg1);
-            break;
-        }
-        case DUMP:{
-            stack_dump(stack, "log.txt", DUMP_ALL, "dump in execution", create_log_data(__FILE__, __FUNCTION__, __LINE__));
-            break;
-        }
-        case DIV:{
-            double arg1 = 0, 
-                   arg2 = 0;
-            stack_pop(stack, &arg1);
-            stack_pop(stack, &arg2);
-            stack_push(stack, arg1/arg2);
-            break;
-        }
-        case SQRT:{
-            double arg1 = 0;
-            stack_pop(stack, &arg1);
-            stack_push(stack, sqrt(arg1));
-            break;
-        }
-        case SIN:{
-            double arg1 = 0;
-            stack_pop(stack, &arg1);
-            stack_push(stack, sin(arg1));
-            break;
-        }
-        case COS:{
-            double arg1 = 0;
-            stack_pop(stack, &arg1);
-            stack_push(stack, cos(arg1));
-            break;
-        }
-        case HET:{
-
-            break;
-        }
+void execute_command(Cpu* cp, char* buffer, int* offset){
+    assert(cp != NULL);
+    assert(buffer != NULL);
+    
+    Stack_t* stack = &(cp->cpu_stack);
  
+    char operation = *((char*)buffer + *offset);
 
+    *offset += sizeof(char);
 
+    #define COMMAND(name, num, argc, code)\
+        case V_ ## name : code break;
 
-        
+    switch(operation){        
+        #include "../commands.h"
     }
-    return curr_offset;
+    
+    #undef COMMAND
 }
 
 void cpu_execute_programm(Cpu* cp, const char* file){
@@ -154,12 +91,11 @@ void cpu_execute_programm(Cpu* cp, const char* file){
 
     IF_DEBUG_ON(create_list_file(buffer, "listing_file.txt", count_of_lines);)
     
-    size_t curr = 0;
-    size_t offset = 0;
-
+    int offset = 0;
+   
     for(int i = 0; i < count_of_lines; i++){
-        curr = execute_command(&(cp->cpu_stack), buffer+offset);
-        offset += curr;
+        execute_command(cp, buffer, &offset);
+     //   
     }
     free(buffer);
     fclose(fp);
@@ -168,29 +104,62 @@ void cpu_execute_programm(Cpu* cp, const char* file){
 void create_list_file(char* buffer, char* file, size_t count_of_lines){
     FILE* fp = fopen(file, "w");
     size_t curr_offset = 0;
+    char mode = 0;
+    double darg = 0;
+    char rarg = 0;
+    size_t spaces = 0;
     for(int i = 0; i < count_of_lines; i++){
-        
         fprintf(fp, "%08lx  |  ", curr_offset);
         char operation = *((char*)buffer + curr_offset);
         curr_offset += sizeof(char);
+        fprintf(fp, "%02x  |", operation);
+        fprintf(fp,"|");
 
-        fprintf(fp, "%02x  |  ", operation);
-
+        spaces = 0;
         for(int j = 0; j < argc[operation]; j++){
-            double d = *((double*)(buffer + curr_offset));
-            curr_offset += sizeof(double);
-            for(int k = 0; k < sizeof(double); k++){
-                unsigned char p = *((char*)(&d) + k);
-                fprintf(fp,"%02x ", p);
-            }
-            fprintf(fp,"(%8e)  ", d);
-        }
-        size_t sd = (sizeof(double)*3 + 16)*argc[operation];
+            mode = *(buffer + curr_offset);
+            curr_offset += sizeof(char);
 
-        for(int y = 0; y < (sizeof(double)*3 + 16)*max_argc-sd; y++){
-            fprintf(fp, " ");
+            if(mode == 1){
+                darg = *((double*)(buffer + curr_offset));
+                curr_offset += sizeof(double);
+                for(int k = 0; k < sizeof(double); k++){
+                    unsigned char p = *((char*)(&darg) + k);
+                    fprintf(fp," %02x ", p);
+                }
+                fprintf(fp,"(%8e) |", darg);
+                spaces += 48;
+            }else{
+                rarg = *(buffer + curr_offset);
+                curr_offset += sizeof(char);
+                
+                fprintf(fp, " %02x ", rarg);
+                for(int z = 0; z < 28; z++){
+                    fprintf(fp," ");
+                }
+                rarg += 'a';
+                fprintf(fp, "(r%cx)", rarg);
+                for(int z = 0; z < 10; z++){
+                    fprintf(fp," ");
+                }
+                fprintf(fp,"|");
+
+                spaces += 48;
+            }
         }
-        fprintf(fp, "|");
+
+
+        size_t sd = 48 * max_argc;
+        for(int z = spaces + 1; z <= sd; z++){
+            if(z % 48 == 0){
+                fprintf(fp,"|");
+
+            }else{
+                fprintf(fp," ");
+            }
+        }
+        fprintf(fp,"|");
+
         fprintf(fp,"%s", command_names[operation]);
     
         fprintf(fp,"\n");

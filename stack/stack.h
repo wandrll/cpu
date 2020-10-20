@@ -27,6 +27,7 @@ stack_end_signal stack_constructor(Stack_t* stack, size_t capacity);
 stack_end_signal stack_push(Stack_t* stack, stack_elem_t elem_to_push);
 stack_end_signal stack_pop(Stack_t* stack, stack_elem_t* result);
 stack_end_signal stack_destructor(Stack_t* stack);
+stack_end_signal stack_back(Stack_t* stack, stack_elem_t* result);
 ////                      ////
 
 
