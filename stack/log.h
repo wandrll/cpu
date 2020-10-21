@@ -19,10 +19,10 @@ typedef struct{
     int line;
 }log_data;
 
-void stack_dump(Stack_t* stack, const char* log, int mode, char* message,  log_data* data);
+void stack_dump(Stack_t* stack, const char* log, const int mode, const char* message,  log_data* data);
 void print_stack_elem(int a, FILE* fp);
 void print_stack_elem(double a, FILE* fp);
-log_data* create_log_data(char* file, const char* func, int line);
+log_data* create_log_data(const char* file, const char* func, const int line);
 
 int int_cmp(void* a, FILE* fp);
 

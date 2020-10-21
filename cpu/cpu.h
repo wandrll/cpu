@@ -15,4 +15,4 @@ void check_executable_file(FILE* fp);
 
 void cpu_execute_programm(Cpu* cp, const char* file);
 
-void create_list_file(char* buffer, char* file, size_t count_of_lines);
+void create_list_file(char* buffer, const char* file, size_t count_of_lines);

@@ -53,7 +53,7 @@ void check_executable_file(FILE* fp){
     }
 }
 
-void execute_command(Cpu* cp, char* buffer, int* offset){
+void execute_command(Cpu* cp, char* buffer, size_t* offset){
     assert(cp != NULL);
     assert(buffer != NULL);
     
@@ -91,9 +91,9 @@ void cpu_execute_programm(Cpu* cp, const char* file){
 
     IF_DEBUG_ON(create_list_file(buffer, "listing_file.txt", count_of_lines);)
     
-    int offset = 0;
+    size_t offset = 0;
    
-    for(int i = 0; i < count_of_lines; i++){
+    while(offset < count_of_bytes){
         execute_command(cp, buffer, &offset);
      //   
     }
@@ -101,7 +101,7 @@ void cpu_execute_programm(Cpu* cp, const char* file){
     fclose(fp);
 }
 
-void create_list_file(char* buffer, char* file, size_t count_of_lines){
+void create_list_file(char* buffer, const char* file, size_t count_of_lines){
     FILE* fp = fopen(file, "w");
     size_t curr_offset = 0;
     char mode = 0;

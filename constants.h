@@ -2,10 +2,11 @@
 const unsigned int max_command_name = 4;
 const unsigned int max_argc = 2;
 const unsigned char current_version = 1;
+const unsigned int max_label_count = 10;
 const int register_count = 4;
 const char label[] = "GG";
 const unsigned int label_size = 2;
-const int command_count = 15;
+const int command_count = 17;
 ///////////////////////////////////////////////////////////////////////////////////////
 
 #define COMMAND(name, num, argc, code)\

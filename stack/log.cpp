@@ -39,7 +39,7 @@ int read_and_cmp_stack_elems(double a, FILE* fp){
     }
 }
 
-log_data* create_log_data(char* file, const char* func, int line){
+log_data* create_log_data(const char* file, const char* func, const int line){
     log_data* data = (log_data*)calloc(1, sizeof(log_data));
     data->file = (char*)calloc(strlen(file)+1, sizeof(char));
     strcpy(data->file, file);
@@ -58,7 +58,7 @@ void delete_log_data(log_data* data){
 }
 
 
-void stack_dump(Stack_t* stack, const char* log_name, int mode, char* message, log_data* data){
+void stack_dump(Stack_t* stack, const char* log_name, const int mode, const char* message, log_data* data){
     assert(stack != NULL);
     FILE* fp = fopen(log_name, "a");
     fprintf(fp, "\n\n\n\n###############################################################\n");

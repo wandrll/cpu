@@ -16,13 +16,19 @@
     double arg ## num = 0;                                          \
     stack_pop(stack, &arg ## num);
 
+#define GET_MODE                                                    \
+    char mode = *(buffer + *offset);                                \
+    *offset += sizeof(char);
+
+#define REGISTER(num)                                               \
+    cp->registers[reg ## num]
+
 COMMAND (HET,0,0,{
 
 })
 
 COMMAND (PUSH,1,1, {
-                char mode = *(buffer + *offset);
-                *offset += sizeof(char);
+                GET_MODE
                 if(mode == 1){
                     GET_ARG(1)
                     PUSH(1)
@@ -43,20 +49,21 @@ COMMAND (ADD,2,0, {
 COMMAND (SUB,3,0, {
             POP(1)
             POP(2)
-            arg1 = arg1 - arg2;
+            arg1 = arg2 - arg1;
             PUSH(1);
 })
 
 COMMAND (MUL,4,0, {
             POP(1)
             POP(2)
-            arg1 = arg1 * arg2;
+            arg1 = arg2 * arg1;
             PUSH(1);
 })
 
 COMMAND (OUT,5,0, {
             POP(1)
-            printf("%lg", arg1);
+            printf("%lg \n", arg1);
+            fflush(stdout);
 })
 
 COMMAND (DUMP,6,0, {
@@ -66,7 +73,7 @@ COMMAND (DUMP,6,0, {
 COMMAND (DIV,7,0, {
             POP(1)
             POP(2)
-            arg1 = arg1 / arg2;
+            arg1 = arg2 / arg1;
             PUSH(1);
 })
 
@@ -102,24 +109,49 @@ COMMAND(MOV,12,2, {
             *offset += sizeof(char);
             GET_REG(2)
             
-            cp->registers[reg1] = cp->registers[reg2];
+            REGISTER(1) = REGISTER (2);
 })
 
 COMMAND(POP,13,1, {
             *offset += sizeof(char);
             GET_REG(1)
             POP(1)
-            cp->registers[reg1] = arg1;
+            REGISTER(1) = arg1;
 })
 
 COMMAND(COPY,14,0, {
             double arg1 = 1;
             stack_back(stack, &arg1);
             PUSH(1)
+})
+
+COMMAND(JMP,15,1, {
+            *offset += sizeof(char);
+            GET_ARG(1)
+            *offset = (size_t)arg1;
+            //printf(" %lu ", *offset);
+})
+
+COMMAND(JAE,16,1, {
+            
+            POP(1)
+            POP(2)
+            
+            *offset += sizeof(char);
+            GET_ARG(3)
+            
+            if(arg2 >= arg1){
+                *offset = (size_t)arg3;
+            }else{
+                PUSH(2)
+            }
+
 }) 
 
-#undef PUSH(num) 
-#undef GET_ARG(num) 
-#undef GET_REG(num)
-#undef GET_ARG_FROM_REG(num_to, num_from)
-#undef POP(num)
+#undef PUSH 
+#undef GET_ARG 
+#undef GET_REG
+#undef GET_ARG_FROM_REG 
+#undef POP
+#undef GET_MODE
+#undef REGISTER

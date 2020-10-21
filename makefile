@@ -1,15 +1,18 @@
-CFLAGS= -c
+CFLAGS= -c 
 CTEMP=-Wall -Werror -Wextra -pedantic -Wshadow -Wconversion -Wsign-conversion
 all: assembler executor
 
-assembler: translator.o assembler/assembler.o assembler/data.o
-	g++ translator.o assembler/assembler.o assembler/data.o -o assm 
+assembler: translator.o assembler/assembler.o assembler/data.o assembler/disassembler.o
+	g++ translator.o assembler/assembler.o assembler/data.o assembler/disassembler.o -o assm 
 
 translator.o: translator.cpp assembler/assembler.h constants.h
 	g++ $(CFLAGS) translator.cpp
 
 assembler.o: assembler/assembler.cpp constants.h
 	g++ $(CFLAGS) assembler/assembler.cpp
+
+disassembler.o: assembler/disassembler.cpp constants.h
+	g++ $(CFLAGS) assembler/disassembler.cpp
 
 data.o: assembler/data.cpp
 	g++ $(CFLAGS) assembler/data.cpp

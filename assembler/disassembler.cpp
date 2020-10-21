@@ -1,0 +1,235 @@
+#include "assembler.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+
+
+int no_exist_label_on_pos(Label* scratches, size_t labels_count, size_t pos){
+    for(int i = 0; i < labels_count; i++){
+        if(scratches[i].position == pos){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+char* find_name_by_pos(Label* scratches, size_t label_count, size_t pos){
+    assert(scratches != NULL);
+
+    for(int i = 0; i < label_count; i++){
+        if(scratches[i].position == pos){
+            return scratches[i].name;
+        }
+    }
+
+    printf("Wrong position: %lu\n", pos);
+    fflush(stdout);
+    abort();
+}
+
+
+void find_label(char* buffer, size_t* offset, Label* scratches, size_t* labels_count){
+
+    char operation = *((char*)buffer + *offset);
+    char mode = 0;
+    
+    *offset += sizeof(char);
+
+    if(isJMPoperation((assembler_command)operation)){
+        size_t pos = (size_t)(*((double*)(buffer + *offset)));
+        if(no_exist_label_on_pos(scratches, *labels_count, pos)){
+            *offset += sizeof(char);
+            scratches[*labels_count].position = (size_t)(*((double*)(buffer + *offset)));
+            *offset += sizeof(double);
+
+            char* tmp1 =  (char*)calloc(20, sizeof(char)); 
+            strcat(tmp1, "label");
+            int l1 = strlen(tmp1);
+            int l2 = 0;
+            sprintf(tmp1 + l1, "%lu%n", *labels_count, &l2);
+
+            char* tmp = (char*)calloc(l1 + l2 + 1, sizeof(char));
+
+            memcpy(tmp, tmp1, l1 + l2);
+            free(tmp1);
+
+            scratches[*labels_count].name = tmp;
+            (*labels_count)++;
+            return;
+        }
+    }
+
+    size_t argc_curr = argc[operation];
+
+    for(int i = 0; i < argc_curr; i++){
+        mode = *(buffer + *offset);
+        *offset += sizeof(char);
+        if(mode == 1){
+            *offset += sizeof(double);
+        }else{
+            *offset += sizeof(char);
+        }
+    }
+}
+
+size_t create_labels(char* buffer, size_t count_of_lines, Label* scratches){
+
+    FILE* fq = fopen("disassemble.txt", "w");
+    size_t curr = 0;
+    size_t labels_count = 0;
+    for(int i = 0; i < count_of_lines; i++){
+        find_label(buffer, &curr, scratches, &labels_count);
+    }
+
+    fclose(fq);
+    return labels_count;
+}
+
+
+void check_executable_file(FILE* fp){
+    char* tmplabel = (char*)calloc(label_size + 1, sizeof(char));
+ 
+    unsigned char version = 0;
+
+
+    fread(tmplabel, sizeof(char), label_size, fp);
+
+    if(strcmp(tmplabel, label)){
+        printf("Wrong executable file. Programm will be aborted");
+        fflush(stdout);
+        abort();
+    }
+
+    free(tmplabel);
+
+    fread(&version, sizeof(char), 1, fp);
+
+    if(version != current_version){
+        printf("Wrong version of executable file. Programm will be aborted");
+        fflush(stdout);
+        abort();
+    }
+}
+
+
+
+
+
+
+
+
+
+size_t disassemble_line(char* buffer, FILE* fp, Label* scratches, size_t labels_count){
+    size_t curr_offset = 0;
+    char operation = *((char*)buffer);
+    curr_offset += sizeof(char);
+    fprintf(fp, "%s ", command_names[operation]);
+
+    if(isJMPoperation((assembler_command)operation)){
+        curr_offset += sizeof(char);
+
+        size_t pos = (size_t)(*((double*)(buffer + curr_offset)));
+        curr_offset += sizeof(double);
+            
+        char* s = find_name_by_pos(scratches, labels_count, pos);
+        fprintf(fp, "%s\n", s);
+    }else{
+
+        char mode = 0;
+        double darg = 0;
+        char rarg = 0;
+
+
+        size_t argc_curr = argc[operation];
+        for(int i = 0; i < argc_curr; i++){
+            mode = *(buffer + curr_offset);
+            curr_offset += sizeof(char);
+            if(mode == 1){
+                darg = *((double*)(buffer + curr_offset));
+                curr_offset += sizeof(double);
+                fprintf(fp, "%lg ", darg);
+            }else{
+                rarg = *((char*)(buffer + curr_offset)) + 'a';
+                curr_offset += sizeof(char);
+                fprintf(fp, "r%cx ", rarg);    
+            }
+        }
+        fprintf(fp, "\n");
+    }
+    return curr_offset;
+
+}
+
+void do_disassemble_file(char* buffer, size_t count_of_lines, Label* scratches, size_t count_of_labels){
+    FILE* fq = fopen("disassemble.txt", "w");
+    size_t offset = 0, off = 0;
+    size_t curr_label = 0;
+    if(curr_label < count_of_labels && scratches[curr_label].position == offset){
+        fprintf(fq,"%s:\n", scratches[curr_label].name);
+        curr_label++;
+    }
+    for(int i = 0; i < count_of_lines; i++){
+        printf("%lu ", offset);
+        fflush(stdout);
+        off = offset;
+        offset += disassemble_line(buffer + off, fq, scratches, count_of_labels);
+        
+        if(curr_label < count_of_labels && scratches[curr_label].position == offset){
+            fprintf(fq,"%s:\n", scratches[curr_label].name);
+            curr_label++;
+        }
+    
+    }
+
+    fclose(fq);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int labels_cmp(const void* a, const void* b){
+    return ((Label*)a)->position - ((Label*)b)->position; 
+}
+
+void disassemble_file(char* from_file){
+    assert(from_file != NULL);
+    FILE* fp = fopen(from_file, "rb");
+    assert(fp != NULL);
+
+    check_executable_file(fp);
+    
+    size_t count_of_lines = 0;
+    size_t count_of_bytes = 0;
+    fread(&count_of_lines, sizeof(size_t), 1, fp);
+    fread(&count_of_bytes, sizeof(size_t), 1, fp);
+
+    char* buffer = (char*)calloc(count_of_bytes + 1, sizeof(char));
+    fread(buffer, sizeof(char), count_of_bytes, fp);
+    
+    Label* scratches = (Label*)calloc(max_label_count, sizeof(Label));
+
+    size_t scratches_count = create_labels(buffer, count_of_lines, scratches);
+
+    qsort(scratches, scratches_count, sizeof(Label), labels_cmp);
+
+    for(int i = 0; i < scratches_count; i++){
+        printf("%s, %ld\n",scratches[i].name, scratches[i].position);
+    }
+
+    do_disassemble_file(buffer, count_of_lines,scratches,scratches_count);
+
+
+    free(buffer);
+    fclose(fp);
+}
