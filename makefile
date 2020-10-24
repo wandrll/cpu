@@ -1,9 +1,11 @@
-CFLAGS= -c 
+CFLAGS= -c -fsanitize=address -fsanitize=alignment -fsanitize=bool -fsanitize=bounds -fsanitize=enum -fsanitize=float-cast-overflow -fsanitize=float-divide-by-zero -fsanitize=integer-divide-by-zero -fsanitize=leak -fsanitize=nonnull-attribute -fsanitize=null -fsanitize=object-size -fsanitize=return -fsanitize=returns-nonnull-attribute -fsanitize=shift -fsanitize=signed-integer-overflow -fsanitize=undefined -fsanitize=unreachable -fsanitize=vla-bound -fsanitize=vptr
+LDFLAGS= -fsanitize=address -fsanitize=alignment -fsanitize=bool -fsanitize=bounds -fsanitize=enum -fsanitize=float-cast-overflow -fsanitize=float-divide-by-zero -fsanitize=integer-divide-by-zero -fsanitize=leak -fsanitize=nonnull-attribute -fsanitize=null -fsanitize=object-size -fsanitize=return -fsanitize=returns-nonnull-attribute -fsanitize=shift -fsanitize=signed-integer-overflow -fsanitize=undefined -fsanitize=unreachable -fsanitize=vla-bound -fsanitize=vptr
+TMP = -fsanitize=address -fsanitize=alignment -fsanitize=bool -fsanitize=bounds -fsanitize=enum -fsanitize=float-cast-overflow -fsanitize=float-divide-by-zero -fsanitize=integer-divide-by-zero -fsanitize=leak -fsanitize=nonnull-attribute -fsanitize=null -fsanitize=object-size -fsanitize=return -fsanitize=returns-nonnull-attribute -fsanitize=shift -fsanitize=signed-integer-overflow -fsanitize=undefined -fsanitize=unreachable -fsanitize=vla-bound -fsanitize=vptr
 CTEMP=-Wall -Werror -Wextra -pedantic -Wshadow -Wconversion -Wsign-conversion
 all: assembler executor
 
-assembler: translator.o assembler/assembler.o assembler/data.o assembler/disassembler.o
-	g++ translator.o assembler/assembler.o assembler/data.o assembler/disassembler.o -o assm 
+assembler: translator.o assembler/assembler.o assembler/data.o assembler/disassembler.o constants.h
+	g++ $(LDFLAGS) translator.o assembler/assembler.o assembler/data.o assembler/disassembler.o -o assm 
 
 translator.o: translator.cpp assembler/assembler.h constants.h
 	g++ $(CFLAGS) translator.cpp
@@ -30,6 +32,6 @@ executor.o: executor.cpp constants.h
 	g++ $(CFLAGS) executor.cpp
 
 executor: stack/stack.o stack/log.o cpu/cpu.o executor.o constants.h
-	g++ executor.o stack/stack.o stack/log.o cpu/cpu.o -o exec 
+	g++ $(LDFLAGS) executor.o stack/stack.o stack/log.o cpu/cpu.o -o exec 
 clean:
 	rm -rf *.o assm exec stack/*.o cpu/*.o assembler/*.o 

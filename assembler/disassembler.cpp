@@ -1,4 +1,5 @@
 #include "assembler.h"
+#include "../cpu/cpu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -35,26 +36,22 @@ void find_label(char* buffer, size_t* offset, Label* scratches, size_t* labels_c
     char mode = 0;
     
     *offset += sizeof(char);
-
+    //printf("%s \n", command_names[operation]);
+    fflush(stdout);
     if(isJMPoperation((assembler_command)operation)){
-        size_t pos = (size_t)(*((double*)(buffer + *offset)));
-        if(no_exist_label_on_pos(scratches, *labels_count, pos)){
-            *offset += sizeof(char);
-            scratches[*labels_count].position = (size_t)(*((double*)(buffer + *offset)));
+        *offset += sizeof(char);
+        size_t pos = *((double*)(buffer + *offset));
             *offset += sizeof(double);
 
-            char* tmp1 =  (char*)calloc(20, sizeof(char)); 
+        if(no_exist_label_on_pos(scratches, *labels_count, pos)){
+            
+            scratches[*labels_count].position = pos;
+
+            char* tmp1 =  (char*)calloc(9, sizeof(char)); 
             strcat(tmp1, "label");
-            int l1 = strlen(tmp1);
-            int l2 = 0;
-            sprintf(tmp1 + l1, "%lu%n", *labels_count, &l2);
+            sprintf(tmp1 + 5, "%lu", *labels_count);
 
-            char* tmp = (char*)calloc(l1 + l2 + 1, sizeof(char));
-
-            memcpy(tmp, tmp1, l1 + l2);
-            free(tmp1);
-
-            scratches[*labels_count].name = tmp;
+            scratches[*labels_count].name = tmp1;
             (*labels_count)++;
             return;
         }
@@ -87,11 +84,14 @@ size_t create_labels(char* buffer, size_t count_of_lines, Label* scratches){
 }
 
 
-void check_executable_file(FILE* fp){
-    char* tmplabel = (char*)calloc(label_size + 1, sizeof(char));
- 
-    unsigned char version = 0;
 
+
+void check_executable_file(FILE* fp){
+    assert(fp != NULL);
+
+    char* tmplabel = (char*)calloc(label_size + 1, sizeof(char)); 
+
+    unsigned char version = 0;
 
     fread(tmplabel, sizeof(char), label_size, fp);
 
@@ -111,11 +111,6 @@ void check_executable_file(FILE* fp){
         abort();
     }
 }
-
-
-
-
-
 
 
 
@@ -169,32 +164,22 @@ void do_disassemble_file(char* buffer, size_t count_of_lines, Label* scratches, 
         fprintf(fq,"%s:\n", scratches[curr_label].name);
         curr_label++;
     }
+    
     for(int i = 0; i < count_of_lines; i++){
-        printf("%lu ", offset);
-        fflush(stdout);
+
         off = offset;
         offset += disassemble_line(buffer + off, fq, scratches, count_of_labels);
-        
+
         if(curr_label < count_of_labels && scratches[curr_label].position == offset){
             fprintf(fq,"%s:\n", scratches[curr_label].name);
             curr_label++;
         }
     
     }
+    
 
     fclose(fq);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -223,13 +208,13 @@ void disassemble_file(char* from_file){
 
     qsort(scratches, scratches_count, sizeof(Label), labels_cmp);
 
-    for(int i = 0; i < scratches_count; i++){
-        printf("%s, %ld\n",scratches[i].name, scratches[i].position);
-    }
-
     do_disassemble_file(buffer, count_of_lines,scratches,scratches_count);
-
+    for(int i = 0; i < scratches_count; i++){
+        free(scratches[i].name);
+    }
+    free(scratches);
 
     free(buffer);
+    
     fclose(fp);
 }

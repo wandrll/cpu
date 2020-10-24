@@ -17,12 +17,25 @@
 #include <string.h>
 #include <math.h>
 
+void memory_constructor(Memory* mem, size_t count){
+    mem->data = (double*)calloc(count, sizeof(double));
+    mem->size = count;
+}
+
+void memory_destructor(Memory* mem){
+    free(mem->data); 
+}
+
 void cpu_constructor(Cpu* cp){
     stack_constructor(&(cp->cpu_stack), 10);
+    stack_constructor(&(cp->call_stack), 10);
+
+    cp->RIP = 0;
     cp->registers = (double*)calloc(4, sizeof(double));
 }
 
 void cpu_destructor(Cpu* cp){
+    stack_destructor(&(cp->call_stack));
     stack_destructor(&(cp->cpu_stack));
     free(cp->registers);
 }
@@ -32,6 +45,7 @@ void check_executable_file(FILE* fp){
     assert(fp != NULL);
 
     char* tmplabel = (char*)calloc(label_size + 1, sizeof(char)); 
+
     unsigned char version = 0;
 
     fread(tmplabel, sizeof(char), label_size, fp);
@@ -53,16 +67,16 @@ void check_executable_file(FILE* fp){
     }
 }
 
-void execute_command(Cpu* cp, char* buffer, size_t* offset){
+void execute_command(Cpu* cp, Memory* ram, char* buffer){
     assert(cp != NULL);
     assert(buffer != NULL);
     
     Stack_t* stack = &(cp->cpu_stack);
  
-    char operation = *((char*)buffer + *offset);
-
-    *offset += sizeof(char);
-
+    char operation = *((char*)buffer + cp->RIP);
+    //printf("%s\n", command_names[operation]);
+    cp->RIP += sizeof(char);
+/////////////////////////////////////////////////////////////////////////////
     #define COMMAND(name, num, argc, code)\
         case V_ ## name : code break;
 
@@ -71,9 +85,11 @@ void execute_command(Cpu* cp, char* buffer, size_t* offset){
     }
     
     #undef COMMAND
+/////////////////////////////////////////////////////////////////////////////
 }
 
-void cpu_execute_programm(Cpu* cp, const char* file){
+void cpu_execute_programm(Cpu* cp, Memory* mem, const char* file){
+    assert(cp != NULL);
     assert(file != NULL);
     FILE* fp = fopen(file, "rb");
     assert(fp != NULL);
@@ -85,31 +101,42 @@ void cpu_execute_programm(Cpu* cp, const char* file){
     fread(&count_of_lines, sizeof(size_t), 1, fp);
     fread(&count_of_bytes, sizeof(size_t), 1, fp);
 
+    cp->exec_buffer_size = count_of_bytes;
 
     char* buffer = (char*)calloc(count_of_bytes + 1, sizeof(char));
     fread(buffer, sizeof(char), count_of_bytes, fp);
-
-    IF_DEBUG_ON(create_list_file(buffer, "listing_file.txt", count_of_lines);)
+    //printf("%lu %lu", count_of_lines, count_of_bytes);
+    //IF_DEBUG_ON(create_list_file(buffer, "listing_file.txt", count_of_lines, count_of_bytes);)
     
-    size_t offset = 0;
    
-    while(offset < count_of_bytes){
-        execute_command(cp, buffer, &offset);
-     //   
+    while(cp->RIP < count_of_bytes){
+        execute_command(cp, mem, buffer);   
     }
+
     free(buffer);
     fclose(fp);
 }
 
-void create_list_file(char* buffer, const char* file, size_t count_of_lines){
+
+
+
+
+
+
+
+
+
+
+void create_list_file(char* buffer, const char* file, size_t count_of_lines, size_t  count_of_bytes){
     FILE* fp = fopen(file, "w");
     size_t curr_offset = 0;
     char mode = 0;
     double darg = 0;
     char rarg = 0;
     size_t spaces = 0;
+    fprintf(fp,"| Count of lines: %lu\n| Count of bytes %lu\n", count_of_lines, count_of_bytes);
     for(int i = 0; i < count_of_lines; i++){
-        fprintf(fp, "%08lx  |  ", curr_offset);
+        fprintf(fp, "| %08lx  |  ", curr_offset);
         char operation = *((char*)buffer + curr_offset);
         curr_offset += sizeof(char);
         fprintf(fp, "%02x  |", operation);
@@ -127,36 +154,25 @@ void create_list_file(char* buffer, const char* file, size_t count_of_lines){
                     unsigned char p = *((char*)(&darg) + k);
                     fprintf(fp," %02x ", p);
                 }
-                fprintf(fp,"(%8e) |", darg);
+                fprintf(fp,"(%8e)  |", darg);
                 spaces += 48;
             }else{
                 rarg = *(buffer + curr_offset);
                 curr_offset += sizeof(char);
                 
-                fprintf(fp, " %02x ", rarg);
-                for(int z = 0; z < 28; z++){
-                    fprintf(fp," ");
-                }
+                fprintf(fp, " %02x %28c", rarg, ' ');
+
                 rarg += 'a';
-                fprintf(fp, "(r%cx)", rarg);
-                for(int z = 0; z < 10; z++){
-                    fprintf(fp," ");
-                }
-                fprintf(fp,"|");
+                fprintf(fp, "(r%cx)%10c |", rarg, ' ');
+
 
                 spaces += 48;
             }
         }
 
 
-        size_t sd = 48 * max_argc;
-        for(int z = spaces + 1; z <= sd; z++){
-            if(z % 48 == 0){
-                fprintf(fp,"|");
-
-            }else{
-                fprintf(fp," ");
-            }
+        for(int z = argc[operation]; z < max_argc ; z++){
+                fprintf(fp,"%48c|", ' ');
         }
         fprintf(fp,"|");
 

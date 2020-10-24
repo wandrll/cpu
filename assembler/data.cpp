@@ -152,13 +152,13 @@ void free_data(struct line* data, char* buffer_for_strings){
     free(data);
 }
 
-void recreate_data(struct line* data, const char* ptr_on_buff, size_t num_of_lines){
+void recreate_data(struct line* data, char* ptr_on_buff, size_t num_of_lines){
     assert(data != NULL);
     assert(ptr_on_buff != NULL);
 
     int currl = 0;
-    const char* curr = ptr_on_buff + 1;
-    const char* to = ptr_on_buff + 1;
+    char* curr = ptr_on_buff + 1;
+    char* to = ptr_on_buff + 1;
 
     while(currl < num_of_lines){
         if(*curr == '\0'){

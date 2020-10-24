@@ -11,7 +11,7 @@
  *  \param count количество байтов выделенных на строку
  */
 struct line{
-    const char* line;
+    char* line;
     size_t count;
 };
 
