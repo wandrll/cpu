@@ -1,6 +1,8 @@
 #pragma once
-const unsigned int max_command_name = 4;
-const unsigned int max_argc = 2;
+const int win_size = 512;
+const int memory_size = 8192;
+const unsigned int max_command_name = 6;
+const unsigned int max_argc = 3;
 const unsigned char current_version = 2;
 const unsigned int max_label_count = 20;
 const int register_count = 4;

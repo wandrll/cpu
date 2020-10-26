@@ -14,9 +14,9 @@
     RIP += sizeof(char);
 
 #define GET_COMMON_ARG(num)                                         \
-    char mode = *(buffer + RIP);                                    \
+    mode = *(buffer + RIP);                                    \
     RIP += sizeof(char);                                            \
-    double tmp = 0;                                                 \
+    tmp = 0;                                                 \
     if(mode & 2){                                                   \
         tmp += cp->registers[*(buffer + RIP)];                      \
         RIP += sizeof(char);                                        \
@@ -60,6 +60,8 @@ COMMAND (RET,0,0,{
 })
 
 COMMAND (PUSH,1,1, {
+    char mode = 0;
+    double tmp = 0;
             GET_COMMON_ARG(1)
             PUSH(1)   
 })
@@ -275,6 +277,22 @@ COMMAND(CALL, 23, 1, {
            GET_ARG(1)
            stack_push(&(cp->call_stack), RIP);
            RIP = (size_t)arg1;
+})
+
+COMMAND(CIRCLE, 24, 3, {
+           char mode = 0;
+
+           double tmp = 0;
+
+           GET_COMMON_ARG(1)
+           GET_COMMON_ARG(2)
+           GET_COMMON_ARG(3)
+           set_circle(ram, arg1, arg2, arg3);
+
+})
+
+COMMAND(MEME, 25, 0, {
+            set_image(ram, "meme.jpeg");
 })
 
 #undef PUSH 

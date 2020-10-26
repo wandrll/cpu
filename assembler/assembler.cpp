@@ -13,6 +13,8 @@ struct Command{
 
 
 char** parse_arguments(const char* line, size_t count){
+    assert(line != NULL);
+
     char** res = (char**)calloc(count, sizeof(char*));
     const char* left_ptr = line;
     const char* right_ptr = line;
@@ -36,6 +38,8 @@ char** parse_arguments(const char* line, size_t count){
 
 assembler_command find_operation(const char* str, size_t* length){
     assert(str != NULL);
+    assert(length != NULL);
+
     const char* left = str;
     const char* right = str;
     while(*left == ' ' || *left == '\t'){
@@ -122,11 +126,7 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
     }
 
     size_t offset = 0;
-    //printf("%s ", command_names[com->command]);
-    //fflush(stdout);
-  /*  for(int i = 0; i < curr_argc; i++){
-        printf("%s ", com->arguments[i]);
-    }*/
+
     if(isJMPoperation(com->command)){
         
         char mode = 1;
@@ -135,15 +135,14 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
         offset += sizeof(char);
 
         double res = find_pos_by_name(scratches, label_count, com->arguments[0]);
-       // printf("%s\n", com->arguments[0]);
+
         memcpy(buffer + offset, &res, sizeof(double));
         offset += sizeof(double);
 
     }else{
         double arg = 0;
         int read = 0;
-         int delta = 0;
-        int len = 0;
+
         char mode = 0;
 
         char* curr_arg1 = NULL;
@@ -153,6 +152,7 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
 
         for(int i = 0; i < curr_argc; i++){
             mode = 0;
+
             char* curr_arg1 = com->arguments[i];
             while(*curr_arg1 != 0){
                 if(*curr_arg1 == '+'){
@@ -162,16 +162,9 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
                 }
                 curr_arg1++;
             }
-            //printf("%p\n", curr_arg1);
-
             char last = *(curr_arg1 - 1);
              
             if(last ==']' || *com->arguments[i] == '['){
-                if(last !=']' || *com->arguments[i] != '['){
-                    printf("wrong addressation: %s %s\n", com->arguments[i], curr_arg2);
-                    fflush(stdout);
-                    abort();
-                }
                 
                 mode += 4;
                 *(curr_arg1 - 1) = 0;
@@ -181,17 +174,11 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
                 curr_arg1 = com->arguments[i];
             }
             
-            //printf("%p %p %p\n",com->arguments[i], curr_arg1, curr_arg2);
             if(mode & 3){
 
                 memcpy(buffer + offset, &mode, sizeof(char));
                 offset += sizeof(char);
 
-                if(curr_arg1[0] != 'r' || curr_arg1[1] - 'a' >= register_count || curr_arg1[2] != 'x'){
-                    printf("wrong register: %s\n", curr_arg1);
-                    fflush(stdout);
-                    abort();
-                }
                 reg = curr_arg1[1] - 'a';
 
                 memcpy(buffer + offset, &reg, sizeof(char));
@@ -203,6 +190,7 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
                 offset += sizeof(double);
 
             }else{
+
                 read = sscanf(curr_arg1, "%lg", &arg);
                 if(read == 1){
                     mode += 1;
@@ -217,67 +205,13 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
                     memcpy(buffer + offset, &mode, sizeof(char));
                     offset += sizeof(char);
 
-                    if(curr_arg1[0] != 'r' || curr_arg1[1] - 'a' >= register_count || curr_arg1[2] != 'x'){
-                        printf("wrong register: %s\n", curr_arg1);
-                        fflush(stdout);
-                        abort();
-                    }
+                
                     reg = curr_arg1[1] - 'a';
 
                     memcpy(buffer + offset, &reg, sizeof(char));
                     offset += sizeof(char);
                 }
             }
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            /*
-            read = sscanf(com->arguments[i], "%lg", &arg);
-            //printf("%s ", com->arguments[0]);
-            if(read == 1){
-                
-                mode = 1;
-
-                memcpy(buffer + offset, &mode, sizeof(char));
-                offset += sizeof(char);
-                
-                memcpy(buffer + offset, &arg, sizeof(double));
-                offset += sizeof(double);
-            
-            }else{
-
-                if(com->arguments[i][0] == 'r' || com->arguments[i][1] - 'a' < register_count || com->arguments[i][2] == 'x'){
-                    mode = 2;
-                    memcpy(buffer + offset, &mode, sizeof(char));
-                    offset += sizeof(char);
-
-                    char c = com->arguments[i][1] - 'a';
-
-                    memcpy(buffer + offset, &c, sizeof(char));
-                    offset += sizeof(char);
-                    continue;
-                }
-                if(com->arguments[i][0] == '['){
-                    char* second = strchr(com->arguments[i], ']');
-
-                    continue;
-                }
-
-                
-            }
-
-            */
         }
     }
     return offset;
@@ -289,19 +223,11 @@ static size_t translate_line(Command* com, char* buf, size_t offset, Label* scra
     assert(com != NULL);
     assert(buf != NULL);
     assert(scratches != NULL);
-    
-    double tmp = 0;
-    size_t delta = 0;
-    size_t curr_off = 0;
-    
-
+        
     char operation = com->command;    
-    memcpy(buf + offset, &operation, sizeof(char));
-        //printf("%s\n", command_names[com->command]);
-
-    curr_off = save_arguments(com, buf + offset + sizeof(char), scratches, label_count)+ sizeof(char);
+    memcpy(buf + offset, &operation, sizeof(char)); 
     
-    return curr_off;
+    return save_arguments(com, buf + offset + sizeof(char), scratches, label_count)+ sizeof(char);
 }
 
 
@@ -317,17 +243,16 @@ void add_metadata(FILE* fp, size_t lines_count, size_t count_of_bytes){
 
 void do_assemble_file(Command* commands, size_t count_of_commands, Label* scratches, size_t label_count,  char* to_file){
      
-    char* tmp = (char*)calloc(count_of_commands * (sizeof(char) + (sizeof(char) + sizeof(double))*max_argc + 1), sizeof(char));    
-    size_t offset = 0;
+    char* tmp = (char*)calloc(count_of_commands * (sizeof(char) + (sizeof(char) + sizeof(double))*max_argc) + 1, sizeof(char));    
 
-    int false_lines = 0;
+    size_t offset = 0;
 
     for(size_t i = 0; i < count_of_commands; i++){
         offset += translate_line(commands + i, tmp, offset, scratches, label_count);
     }
 
     FILE* fp = fopen(to_file, "wb");
-    //printf("%lu %lu", count_of_commands, offset);
+
     add_metadata(fp, count_of_commands, offset);
     fwrite(tmp, sizeof(char), offset, fp);
 
@@ -350,6 +275,7 @@ void do_assemble_file(Command* commands, size_t count_of_commands, Label* scratc
 
 static size_t labels_find_offset(assembler_command operation, const char* from, Command* com, int* flag){
     assert(from != NULL);
+    assert(com != NULL);
 
     size_t curr_argc = argc[operation];
     
@@ -361,33 +287,33 @@ static size_t labels_find_offset(assembler_command operation, const char* from, 
 
     char** args = parse_arguments(from , curr_argc);
     com->arguments = args;
+
+    offset += sizeof(char);
     
     if(isJMPoperation(com->command)){
-        
-        char mode = 1;
-
-        offset += sizeof(char);
         offset += sizeof(double);
-
     }else{
         double arg = 0;
         int read = 0;
-        offset += sizeof(char);
-        int plus = 0;
+
         char* curr_arg1 = NULL;
         char* curr_arg2 = NULL;
-        int delta = 0;
-        for(int i = 0; i < curr_argc; i++){
 
+        int delta = 0;
+        int plus = 0;
+
+        for(int i = 0; i < curr_argc; i++){
+            plus = 0;
+            delta = 0;
             char* curr_arg1 = com->arguments[i];
 
             while(*curr_arg1 != 0){
                 if(*curr_arg1 == '+'){
                     offset += (sizeof(double) + sizeof(char));
+                    plus = 1;
                 }
                 curr_arg1++;
             }
-            //printf("%p\n", curr_arg1);
 
             char last = *(curr_arg1 - 1);
              
@@ -401,7 +327,7 @@ static size_t labels_find_offset(assembler_command operation, const char* from, 
             if(plus == 0){
                read = sscanf(com->arguments[i] + delta, "%lg", &arg);
                if(read == 0){
-                   if(com->arguments[i][delta] != 'r' || com->arguments[i][delta + 1] >= register_count || com->arguments[i][delta + 2] != 'x'){
+                   if(com->arguments[i][delta] != 'r' || com->arguments[i][delta + 1] - 'a' >= register_count || com->arguments[i][delta + 2] != 'x'){
                        *flag = 2;
                    }
                    offset += sizeof(char);
@@ -411,63 +337,8 @@ static size_t labels_find_offset(assembler_command operation, const char* from, 
             }
         }
     }
-            
-            
-            
-            
-            
-            
-            
-            
-            
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    /*
-    if(isJMPoperation(operation)){
-        offset += sizeof(char);
-        offset += sizeof(double);
-    }else{
-        double argd = 0;
+    return offset;        
 
-        int read = 0;
-
-        char mode = 0;
-
-        for(int i = 0; i < curr_argc; i++){
-
-            read = sscanf(com->arguments[i], "%lg", &argd);
-
-            if(read == 1){
-                mode = 1;
-                offset += sizeof(char);
-                offset += sizeof(double);
-            }else{
-                offset += sizeof(char);
-                offset += sizeof(char);
-            }
-        }
-    }
-    */
-
-    return offset;
 }
 
 
@@ -482,12 +353,9 @@ static size_t first_iteration_translate_line(line* str, size_t offset, Label* sc
     int f = 0;
     int check = -1;
     check = sscanf(str->line, "%d", &f);
-
-
     if(str->count == 0 || str->line[0] == '/' || check == -1){
         return 0;
     }
-
 
     size_t delta = 0;
     size_t curr_off = 0;
@@ -499,9 +367,7 @@ static size_t first_iteration_translate_line(line* str, size_t offset, Label* sc
         char* buf1 = (char*)calloc(str->count + 1, sizeof(char));
         
         sscanf(str->line, "%s", buf1);
-        int d = strlen(buf1);
-        buf1[d-1] = 0;
-
+        buf1[strlen(buf1)-1] = 0;
 
         scratches[*currnt_scratch].name = buf1;
         scratches[*currnt_scratch].position = offset;
@@ -511,6 +377,7 @@ static size_t first_iteration_translate_line(line* str, size_t offset, Label* sc
     }else{
 
         assembler_command operation = find_operation(str->line, &delta);
+
         commands[*count_of_commands].command = operation;
         if(operation == ERROR){
             *flag = 1;
@@ -528,6 +395,9 @@ static size_t first_iteration_translate_line(line* str, size_t offset, Label* sc
 int first_iteration_of_assembling(line* data, Label* scratches, size_t* count_of_scratches, size_t num_of_lines, Command* commands, size_t* count_of_commands, char* errors){
     assert(data != NULL);
     assert(scratches != NULL);
+    assert(commands != NULL);
+    assert(errors != NULL);
+
     int flag = 0;
     int f = 0;
     size_t offset = 0;
@@ -536,6 +406,7 @@ int first_iteration_of_assembling(line* data, Label* scratches, size_t* count_of
 
         offset += first_iteration_translate_line(data + i, offset, scratches, count_of_scratches ,commands, count_of_commands, &flag);
         errors[i] = flag;
+        f+=flag;
     }
     return f;
 }
@@ -565,8 +436,15 @@ void call_diagnostic(line* data, size_t num_of_lines, char* errors, char* file_n
             while(data[i].line[delta] == ' ' || data[i].line[delta] == '\t'){
                 delta++;
             }
-            printf("\e[4m\e[92m%s:%d:\e[24m \e[1;31m%s\e[0m\n",file_name, i, data[i].line + delta);
+            printf("Wrong  command:\e[4m\e[92m%s:%d:\e[24m \e[1;31m%s\e[0m\n",file_name, i, data[i].line + delta);
 
+        }
+        if(errors[i] == 2){
+            int delta = 0;
+            while(data[i].line[delta] == ' ' || data[i].line[delta] == '\t'){
+                delta++;
+            }
+            printf("Wrong argument:\e[4m\e[92m%s:%d:\e[24m \e[1;31m%s\e[0m\n",file_name, i, data[i].line + delta);
         }
     }
 
@@ -596,7 +474,7 @@ void assemble_file(char* from_file, char* to_file){
 
     
 
-    if(flag == 1){
+    if(flag != 0){
         call_diagnostic(data, num_of_lines, errors, from_file);
         fflush(stdout);
         abort();
@@ -618,9 +496,5 @@ void assemble_file(char* from_file, char* to_file){
     }
     free(commands);
     free(errors);
-    
     free(scratches);
-
-    
-
 }

@@ -26,12 +26,12 @@ log.o: stack/log.cpp
 	g++ $(CFLAGS) stack/log.cpp
 
 cpu.o: cpu/cpu.cpp constants.h
-	g++ $(CFLAGS) cpu/cpu.cpp
+	g++ $(CFLAGS) cpu/cpu.cpp -lsfml-graphics -lsfml-window -lsfml-system
 
 executor.o: executor.cpp constants.h
-	g++ $(CFLAGS) executor.cpp
+	g++ $(CFLAGS) executor.cpp -lsfml-graphics -lsfml-window -lsfml-system
 
 executor: stack/stack.o stack/log.o cpu/cpu.o executor.o constants.h
-	g++ $(LDFLAGS) executor.o stack/stack.o stack/log.o cpu/cpu.o -o exec 
+	g++ $(LDFLAGS) executor.o stack/stack.o stack/log.o cpu/cpu.o -o exec -lsfml-graphics -lsfml-window -lsfml-system
 clean:
 	rm -rf *.o assm exec stack/*.o cpu/*.o assembler/*.o 
