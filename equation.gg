@@ -1,0 +1,118 @@
+IN  (push a)
+POP rax
+IN  (push b)
+POP rbx
+IN  (push c)
+POP rcx
+
+PUSH rax
+PUSH 0
+JE linear
+
+CALL discr
+PUSH [10]
+
+PUSH 0
+JE zero
+
+PUSH 0
+JA positive
+
+PUSH 0
+JB negative
+
+
+discr:
+    PUSH rbx
+    POW 2
+    PUSH rax
+    PUSH 4
+    PUSH rcx
+    MUL
+    MUL
+    SUB
+    POP [10]
+RET
+
+
+
+
+linear:
+
+    PUSH rbx
+    PUSH 0
+    JE inf
+    POP [100]
+    PUSH 1
+    OUT
+    PUSH rcx
+    PUSH rbx
+    DIV
+    PUSH -1
+    MUL
+    OUT
+HLT
+
+
+zero:
+    PUSH 1
+    OUT
+
+    PUSH -1
+    PUSH rbx
+    MUL
+    PUSH 2
+    PUSH rax
+    MUL
+    DIV
+    OUT
+HLT
+
+
+positive:
+    PUSH 2
+    OUT
+    PUSH [10]
+    POW 0.5
+    POP [10]
+    PUSH -1
+    PUSH rbx
+    MUL
+    POP rbx
+    PUSH rbx
+    PUSH [10]
+    ADD
+    PUSH rax
+    PUSH 2
+    MUL
+    DIV
+    OUT
+
+    PUSH rbx
+    PUSH [10]
+    SUB
+    PUSH rax
+    PUSH 2
+    MUL
+    DIV
+    OUT
+HLT
+
+
+negative:
+    PUSH 0
+    OUT
+HLT
+
+inf:
+    PUSH rcx
+    PUSH 0
+    JE lat
+        PUSH 0
+        OUT
+        HLT
+
+    lat:
+    PUSH inf
+    OUT
+HLT

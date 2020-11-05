@@ -1,0 +1,178 @@
+WIN 512 512
+
+IN
+POP rcx
+CALL set
+CALL drawcircle
+bbegin:
+PUSH rcx
+PUSH 1
+JBE eend
+PUSH 1
+SUB
+POP rcx
+CALL drawcircle
+
+
+JMP bbegin
+eend:
+DRAW
+
+
+PUSH 2
+DIV
+POP rcx
+CALL drawcircle
+
+HLT
+
+drawcircle:
+
+PUSH 0
+POP rdx
+    
+    begin:
+/    SLEEP 1
+    PUSH rdx
+    PUSH 0.785
+    JA end
+
+    POP rdx
+
+    PUSH rcx
+    PUSH rdx
+    COS
+    MUL
+    
+    POP rbx
+
+    PUSH rcx
+    PUSH rdx
+    SIN
+    MUL
+    POP rax
+
+    CALL set
+    XCHG rax rbx
+    CALL set
+    XCHG rax rbx
+
+
+
+    PUSH rax
+    PUSH -1
+    MUL
+    POP rax
+
+    PUSH rbx
+    PUSH -1
+    MUL
+    POP rbx
+
+    CALL set
+    XCHG rax rbx
+    CALL set
+    XCHG rax rbx
+
+
+    PUSH rax
+    PUSH 1
+    MUL
+    POP rax
+
+    PUSH rbx
+    PUSH -1
+    MUL
+    POP rbx
+
+    CALL set
+    XCHG rax rbx
+    CALL set
+    XCHG rax rbx
+
+
+    PUSH rax
+    PUSH -1
+    MUL
+    POP rax
+
+    PUSH rbx
+    PUSH -1
+    MUL
+    POP rbx
+
+    CALL set
+    XCHG rax rbx
+    CALL set
+    XCHG rax rbx
+
+
+    PUSH rdx
+   
+    PUSH 0.001
+    ADD
+    POP rdx
+
+    JMP begin
+
+    end:
+RET
+
+
+set:
+    PUSH rax
+    ROUND
+    PUSH 256
+    ADD
+    PUSH 512
+    MUL
+    PUSH rbx
+    ROUND
+    PUSH 256
+    ADD
+    ADD
+    PUSH 262144    
+    ADD
+    POP rex
+
+
+
+    PUSH rax
+    ROUND
+    PUSH 256
+    ADD
+    PUSH 2
+    DIV
+    ROUND
+
+    PUSH rbx
+    ROUND
+    PUSH 256
+    ADD
+    PUSH 2
+    DIV
+    ROUND
+    PUSH 256
+    ROUND
+    MUL
+
+    ADD
+
+    PUSH 100
+    ROUND
+    PUSH 256
+    ADD
+    PUSH 2
+    DIV
+    ROUND
+    PUSH 256
+    MUL
+    PUSH 256
+    MUL
+
+    ADD
+
+    
+    POP [rex]
+RET
+

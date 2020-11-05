@@ -6,7 +6,7 @@
     #define IF_DEBUG_ON(code)
 #endif
 
-
+#include <unistd.h>
 #include "cpu.h"
 #include "../stack/stack.h"
 #include "../constants.h"
@@ -183,7 +183,7 @@ void memory_dump(Memory* mem){
     printf("\n");
 }
 
-void execute_command(Cpu* cp, Memory* ram, char* buffer){
+void execute_command(Cpu* cp, Memory* ram, char* buffer, sf::RenderWindow* win){
     assert(cp != NULL);
     assert(buffer != NULL);
     
@@ -209,6 +209,7 @@ void cpu_execute_programm(Cpu* cp, Memory* mem, const char* file){
     assert(file != NULL);
     FILE* fp = fopen(file, "rb");
     assert(fp != NULL);
+        srand(time(NULL));
 
     check_executable_file(fp);
     
@@ -224,22 +225,15 @@ void cpu_execute_programm(Cpu* cp, Memory* mem, const char* file){
     //printf("%lu %lu", count_of_lines, count_of_bytes);
     IF_DEBUG_ON(create_list_file(buffer, "listing_file.txt", count_of_lines, count_of_bytes);)
     
-    sf::RenderWindow win(sf::VideoMode(win_size,win_size), "CPU");
+    sf::RenderWindow win;
 
     while(cp->RIP < count_of_bytes || win.isOpen()){
         // /memory_dump(mem);
+        //printf("%lu %lu\n", cp->RIP, count_of_bytes);
         if(cp->RIP < count_of_bytes){
-            execute_command(cp, mem, buffer);
-   
+            execute_command(cp, mem, buffer, &win);
         }
-        sf::Event event;
-        while(win.pollEvent(event)){
-            if(event.type == sf::Event::Closed){
-                win.close();
-            }
-        }
-        redraw_from_vram(&win, mem);
-        win.display();
+        
     }
     win.~RenderWindow();
     free(buffer);
@@ -296,7 +290,7 @@ void create_list_file(char* buffer, const char* file, size_t count_of_lines, siz
                     unsigned char p = *((char*)(&darg) + k);
                     fprintf(fp," %02x ", p);
                 }
-                fprintf(fp,"(%8e)  |", darg);
+                fprintf(fp,"(%+12e) |", darg);
                 spaces += 48;
             }
         }

@@ -53,18 +53,18 @@ void find_label_if_jmp(char* buffer, size_t* offset, Label* scratches, size_t* l
     char operation = *((char*)buffer + *offset);
     char mode = 0;
     
-    *offset += sizeof(char);
+    (*offset) += sizeof(char);
 
     fflush(stdout);
     if(isJMPoperation((assembler_command)operation)){
-        *offset += sizeof(char);
+        (*offset) += sizeof(char);
         
         size_t pos = *((double*)(buffer + *offset));
-        
-        *offset += sizeof(double);
+        (*offset) += sizeof(double);
 
         if(no_exist_label_on_pos(scratches, *labels_count, pos)){
-            
+         //   printf("%lu ", pos);
+
             scratches[*labels_count].position = pos;
 
             char* tmp1 =  (char*)calloc(9, sizeof(char)); 
@@ -77,18 +77,19 @@ void find_label_if_jmp(char* buffer, size_t* offset, Label* scratches, size_t* l
             (*labels_count)++;
             return;
         }
-    }
+    }else{
+        size_t argc_curr = argc[operation];
 
-    size_t argc_curr = argc[operation];
+        for(int i = 0; i < argc_curr; i++){
+            mode = (char)*(buffer + *offset);
+            (*offset) += sizeof(char);
 
-    for(int i = 0; i < argc_curr; i++){
-        mode = *(buffer + *offset);
-        *offset += sizeof(char);
-        if(mode & 1){
-            *offset += sizeof(double);
-        }
-        if(mode & 2){
-            *offset += sizeof(char);
+            if(mode & 1){
+                (*offset) += sizeof(double);
+            }
+            if(mode & 2){
+                (*offset) += sizeof(char);
+            }
         }
     }
 }
@@ -161,9 +162,9 @@ size_t disassemble_line(char* buffer, FILE* fp, Label* scratches, size_t labels_
                 fprintf(fp, "[");
             }
             if(mode & 2){
-                rarg = *((char*)(buffer + curr_offset)) + 'a';
+                rarg = *((char*)(buffer + curr_offset));
                 curr_offset += sizeof(char);
-                fprintf(fp, "r%cx", rarg);    
+                fprintf(fp, "%s", register_names[rarg]);    
             }
 
             if(mode & 1 && mode & 2){

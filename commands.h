@@ -38,7 +38,6 @@
 #define POP(num)                                                    \
     double arg ## num = -29;                                        \
     if(stack_pop(stack, &arg ## num) != STACK_OK){                  \
-        printf("%lu ", RIP);                                        \
     }
 
 #define GET_MODE                                                    \
@@ -50,13 +49,9 @@
 
 
 COMMAND (RET,0,0,{
-    if((cp->call_stack).size == 0){
-        RIP = cp->exec_buffer_size;
-    }else{
-        double arg1 = 0;
-        stack_pop(&(cp->call_stack), &arg1);
-        RIP = (size_t)arg1;
-    }
+    double arg1 = 0;
+    stack_pop(&(cp->call_stack), &arg1);
+    RIP = (size_t)arg1;
 })
 
 COMMAND (PUSH,1,1, {
@@ -112,7 +107,7 @@ COMMAND(SQRT,8,0, {
 
 COMMAND(SIN,9,0, {
             POP(1)
-            arg1 = sqrt(arg1);
+            arg1 = sin(arg1);
             PUSH(1);
 })
 
@@ -294,6 +289,64 @@ COMMAND(CIRCLE, 24, 3, {
 COMMAND(MEME, 25, 0, {
             set_image(ram, "meme.jpeg");
 })
+
+COMMAND (HLT,26,0,{
+    RIP = cp->exec_buffer_size;
+})
+
+COMMAND (WIN,27,2,{
+    char mode = 0;
+    double tmp = 0;
+    GET_COMMON_ARG(1)
+    GET_COMMON_ARG(2)
+     win->create(sf::VideoMode(arg1, arg2), "CPU window");
+
+})
+
+COMMAND (ROUND,28,0,{
+    POP(1);
+    long long int t = arg1;
+    arg1 = t;
+    PUSH(1)
+})
+
+
+COMMAND (DBG,29,0,{
+    printf("/////////////////////\n");
+})
+
+COMMAND (RNDINT,30,0,{
+    double arg1 = rand()%16777216;
+    PUSH(1)
+})
+
+COMMAND (XCHG,31,2,{
+    RIP += sizeof(char);
+    char reg1 = *(buffer + RIP); 
+    RIP += sizeof(char);
+    RIP += sizeof(char);
+    char reg2 = *(buffer + RIP);
+    RIP += sizeof(char);
+    double arg = cp->registers[reg1];
+    cp->registers[reg1] = cp->registers[reg2];
+    cp->registers[reg2] = arg;
+})
+
+
+COMMAND (DRAW,32,0,{
+    if(win->isOpen()){
+        redraw_from_vram(win, ram);
+        win->display();
+
+    }
+})
+COMMAND (SLEEP,33,1,{
+    double tmp = 0;
+    char mode = 0;
+    GET_COMMON_ARG(1)
+    sleep(arg1);
+})
+
 
 #undef PUSH 
 #undef GET_ARG 

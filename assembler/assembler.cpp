@@ -71,6 +71,21 @@ assembler_command find_operation(const char* str, size_t* length){
     return ERROR;
 }
 
+registres find_register(char* from){
+
+    #define REGISTER(name, num){            \
+        if(strcmp(#name, from) == 0){      \
+            return (registres)num ;          \
+        }                                   \
+    }
+
+    #include "../registers.h"
+    
+    #undef REGISTER
+    return wrong_register;
+}
+
+
 int isJMPoperation(assembler_command op){
     switch(op){
         case V_JMP: return 1;
@@ -179,7 +194,7 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
                 memcpy(buffer + offset, &mode, sizeof(char));
                 offset += sizeof(char);
 
-                reg = curr_arg1[1] - 'a';
+                reg = find_register(curr_arg1);
 
                 memcpy(buffer + offset, &reg, sizeof(char));
                 offset += sizeof(char);
@@ -206,7 +221,7 @@ static size_t save_arguments(Command* com, char* buffer, Label* scratches, size_
                     offset += sizeof(char);
 
                 
-                    reg = curr_arg1[1] - 'a';
+                    reg = find_register(curr_arg1);
 
                     memcpy(buffer + offset, &reg, sizeof(char));
                     offset += sizeof(char);
@@ -288,9 +303,10 @@ static size_t labels_find_offset(assembler_command operation, const char* from, 
     char** args = parse_arguments(from , curr_argc);
     com->arguments = args;
 
-    offset += sizeof(char);
     
     if(isJMPoperation(com->command)){
+                    offset += sizeof(char);
+
         offset += sizeof(double);
     }else{
         double arg = 0;
@@ -303,6 +319,8 @@ static size_t labels_find_offset(assembler_command operation, const char* from, 
         int plus = 0;
 
         for(int i = 0; i < curr_argc; i++){
+            offset += sizeof(char);
+
             plus = 0;
             delta = 0;
             char* curr_arg1 = com->arguments[i];
@@ -321,13 +339,16 @@ static size_t labels_find_offset(assembler_command operation, const char* from, 
                 if(last !=']' || *com->arguments[i] != '['){
                     *flag = 2;
                 }
+                com->arguments[i]++;
+                *(curr_arg1 - 1) = 0;
                 delta = 1;
             }
             
             if(plus == 0){
                read = sscanf(com->arguments[i] + delta, "%lg", &arg);
                if(read == 0){
-                   if(com->arguments[i][delta] != 'r' || com->arguments[i][delta + 1] - 'a' >= register_count || com->arguments[i][delta + 2] != 'x'){
+
+                   if(find_register(com->arguments[i]) == wrong_register){
                        *flag = 2;
                    }
                    offset += sizeof(char);
@@ -335,6 +356,11 @@ static size_t labels_find_offset(assembler_command operation, const char* from, 
                    offset += sizeof(double);
                }
             }
+            if(delta == 1){
+                com->arguments[i]--;
+                *(curr_arg1 - 1) = ']';
+            }
+            
         }
     }
     return offset;        
@@ -383,6 +409,8 @@ static size_t first_iteration_translate_line(line* str, size_t offset, Label* sc
             *flag = 1;
         }else{
             curr_off = labels_find_offset(operation, str->line + delta, commands + *count_of_commands, flag) + sizeof(char);
+            //printf("%lu %s\n", curr_off, command_names[operation]);
+
             (*count_of_commands)++;
         }
     }
@@ -471,8 +499,6 @@ void assemble_file(char* from_file, char* to_file){
     char* errors = (char*)calloc(num_of_lines, sizeof(char));
 
     int flag = first_iteration_of_assembling(data, scratches, &count_of_scratches, num_of_lines, commands, &count_of_commands, errors);
-
-    
 
     if(flag != 0){
         call_diagnostic(data, num_of_lines, errors, from_file);

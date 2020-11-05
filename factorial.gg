@@ -1,0 +1,28 @@
+IN
+POP rax
+PUSH rax
+CALL factorial
+OUT
+HLT
+
+
+factorial:
+    PUSH     rax
+    PUSH                1
+    
+    JBE exit
+    
+    PUSH 1
+    SUB
+    COPY
+    POP rax
+    
+    CALL factorial
+    
+    MUL
+/    COPY
+/    OUT
+    
+    exit:
+RET
+
